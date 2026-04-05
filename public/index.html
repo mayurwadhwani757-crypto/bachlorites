@@ -120,6 +120,10 @@ body{font-family:-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:
 .desktop-topbar{display:none;padding:10px 20px;border-bottom:1px solid var(--border);align-items:center;justify-content:space-between;flex-shrink:0}
 .model-tag{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px}
 .mdot{width:7px;height:7px;border-radius:50%;background:#22c55e}
+.ai-cnt table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+.ai-cnt th{background:rgba(199,123,58,0.15);color:var(--accent2);padding:8px 12px;text-align:left;border:1px solid rgba(199,123,58,0.25);font-weight:600}
+.ai-cnt td{padding:7px 12px;border:1px solid var(--border);color:var(--text);vertical-align:top}
+.ai-cnt tr:nth-child(even) td{background:rgba(255,255,255,0.03)}
 </style>
 </head>
 <body>
@@ -303,7 +307,23 @@ function fmt(text){
   text=text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
   text=text.replace(/\*(.*?)\*/g,'<em>$1</em>');
   text=text.replace(/^### (.*$)/gm,'<h3>$1</h3>');
-  return text.split(/\n\n+/).map(p=>{if(p.startsWith('<pre>')||p.startsWith('<h3>'))return p;return`<p>${p.replace(/\n/g,'<br>')}</p>`;}).join('');
+  text=text.replace(/^#### (.*$)/gm,'<h4>$1</h4>');
+
+  text=text.replace(/((?:\|.*\|[\r\n]*)+)/g,function(match){
+    const rows=match.trim().split('\n').filter(r=>r.trim());
+    let html='<table><thead>';let isHead=true;
+    for(const row of rows){
+      if(/^\|[-:\s|]+\|$/.test(row.trim())){isHead=false;html+='</thead><tbody>';continue;}
+      const cells=row.trim().replace(/^\||\|$/g,'').split('|').map(c=>`<${isHead?'th':'td'}>${c.trim()}</${isHead?'th':'td'}>`);
+      html+=`<tr>${cells.join('')}</tr>`;
+    }
+    html+='</tbody></table>';return html;
+  });
+
+  return text.split(/\n\n+/).map(p=>{
+    if(p.startsWith('<pre>')||p.startsWith('<h3>')||p.startsWith('<h4>')||p.startsWith('<table>'))return p;
+    return`<p>${p.replace(/\n/g,'<br>')}</p>`;
+  }).join('');
 }
 
 function addAI(text,qd){
