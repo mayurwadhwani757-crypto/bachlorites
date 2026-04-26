@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Bachlorites — KSKVU Commerce Tutor</title>
+<meta name="description" content="AI-powered commerce tutor for KSKVU B.Com students. Solve questions, take quizzes, get revision notes, and practice problems.">
+<style>
+:root{--bg:#212121;--sidebar:#171717;--surface:#2f2f2f;--surface2:#3a3a3a;--border:rgba(255,255,255,0.1);--text:#ececec;--text2:#aaaaaa;--text3:#717171;--accent:#c77b3a;--accent2:#d4893e;--input-bg:#2f2f2f;--hover:rgba(255,255,255,0.06);--code-bg:#1a1a1a;--green:#22c55e;--red:#ef4444;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── Auth Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(12px);transition:opacity .3s}
+.modal-overlay.hidden{display:none}
+.modal-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:36px 28px 28px;max-width:380px;width:92%;text-align:center;animation:modalIn .35s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(0.9) translateY(20px)}to{opacity:1;transform:none}}
+.modal-card .m-logo{width:52px;height:52px;background:linear-gradient(135deg,var(--accent),#e89b4e);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;margin:0 auto 18px;box-shadow:0 8px 24px rgba(199,123,58,0.3)}
+.modal-card h2{font-size:22px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.modal-card .m-sub{font-size:13px;color:var(--text2);margin-bottom:22px;line-height:1.5}
+.modal-card input{width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:12px;padding:13px 16px;color:var(--text);font-size:15px;font-family:inherit;margin-bottom:10px;outline:none;transition:border-color .2s}
+.modal-card input:focus{border-color:var(--accent)}
+.modal-card input::placeholder{color:var(--text3)}
+.auth-btn{width:100%;background:linear-gradient(135deg,var(--accent),#e89b4e);border:none;color:#fff;padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:6px;transition:transform .15s,box-shadow .15s}
+.auth-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(199,123,58,0.35)}
+.auth-btn:active{transform:scale(0.98)}
+.auth-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.modal-note{font-size:11px;color:var(--text3);margin-top:14px}
+.m-error{color:var(--red);font-size:12px;margin-bottom:8px;min-height:16px}
+
+/* ── Top nav ── */
+.topnav{height:52px;background:var(--sidebar);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 14px;flex-shrink:0;z-index:50}
+.brand{display:flex;align-items:center;gap:8px}
+.brand-logo{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.brand-name{font-size:15px;font-weight:600;color:var(--text)}
+.nav-right{display:flex;align-items:center;gap:8px}
+.menu-btn{background:none;border:1px solid var(--border);color:var(--text2);width:32px;height:32px;border-radius:7px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.new-btn{background:none;border:1px solid var(--border);color:var(--text2);padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit}
+
+/* ── Query badge ── */
+.q-badge{font-size:11px;padding:4px 10px;border-radius:14px;border:1px solid var(--border);color:var(--text3);display:flex;align-items:center;gap:5px;font-family:inherit;background:none;cursor:default}
+.q-badge .qb-num{color:var(--accent);font-weight:700}
+.q-badge.low{border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.06)}
+.q-badge.low .qb-num{color:var(--red)}
+.q-badge.paid-badge{border-color:rgba(34,197,94,0.4);background:rgba(34,197,94,0.06)}
+.q-badge.paid-badge .qb-num{color:var(--green)}
+
+/* ── Drawer overlay ── */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100;opacity:0;pointer-events:none;transition:opacity .25s}
+.drawer-overlay.open{opacity:1;pointer-events:all}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:280px;background:var(--sidebar);z-index:101;transform:translateX(-100%);transition:transform .25s ease;overflow-y:auto;display:flex;flex-direction:column}
+.drawer.open{transform:translateX(0)}
+.drawer-header{padding:16px 14px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.close-btn{background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:4px;line-height:1}
+.sec-label{font-size:10px;color:var(--text3);padding:12px 14px 5px;text-transform:uppercase;letter-spacing:.05em}
+.s-item{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text2);transition:all 0.12s;border:none;background:none;width:calc(100% - 12px);margin:0 6px;text-align:left;font-family:inherit;line-height:1.4}
+.s-item:active{background:var(--hover);color:var(--text)}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:5px;opacity:.7}
+.sdiv{height:1px;background:var(--border);margin:8px 12px}
+.pills{display:flex;flex-wrap:wrap;gap:5px;padding:4px 12px 8px}
+.pill{font-size:11px;padding:4px 11px;border-radius:20px;border:1px solid var(--border);color:var(--text3);cursor:pointer;background:none;font-family:inherit}
+.pill.active{border-color:var(--accent);color:var(--accent);background:rgba(199,123,58,.08)}
+.drawer-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);text-align:center}
+
+/* Subject pills row below topnav on mobile */
+.subj-bar{background:var(--sidebar);border-bottom:1px solid var(--border);padding:8px 12px;display:flex;gap:6px;overflow-x:auto;flex-shrink:0;-webkit-overflow-scrolling:touch}
+.subj-bar::-webkit-scrollbar{display:none}
+.s-pill{font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid var(--border);color:var(--text3);background:none;font-family:inherit;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.s-pill.active{border-color:var(--accent);color:var(--accent);background:rgba(199,123,58,.08)}
+
+/* ── Main layout ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── Messages ── */
+.messages{flex:1;overflow-y:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch}
+.messages::-webkit-scrollbar{width:3px}
+.messages::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:4px}
+
+/* Welcome screen */
+.welcome{max-width:600px;margin:32px auto 0;padding:0 16px;text-align:center}
+.w-logo{width:44px;height:44px;background:linear-gradient(135deg,var(--accent),#e89b4e);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;margin:0 auto 14px;box-shadow:0 6px 20px rgba(199,123,58,0.25)}
+.welcome h1{font-size:22px;font-weight:600;margin-bottom:8px}
+.welcome p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px}
+.w-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left}
+.w-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.w-card:hover{border-color:rgba(199,123,58,0.4);background:var(--surface2)}
+.w-card:active{background:var(--surface2);border-color:var(--accent)}
+.w-ct{font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px}
+.w-cs{font-size:11px;color:var(--text3);line-height:1.4}
+.w-emoji{font-size:16px;margin-bottom:6px}
+
+/* Message rows */
+.msg-row{padding:12px 14px;max-width:720px;margin:0 auto;width:100%;animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.msg-row.user{display:flex;justify-content:flex-end}
+.msg-row.assistant{display:flex;gap:10px;align-items:flex-start}
+.ai-av{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;margin-top:2px}
+.u-bubble{background:var(--surface);border:1px solid var(--border);border-radius:18px 18px 4px 18px;padding:9px 14px;max-width:80%;font-size:14px;line-height:1.6;color:var(--text)}
+.ai-cnt{flex:1;font-size:14px;line-height:1.75;color:var(--text);min-width:0}
+.ai-cnt p{margin-bottom:10px}
+.ai-cnt p:last-child{margin-bottom:0}
+.ai-cnt strong{color:#fff;font-weight:600}
+.ai-cnt pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:'Menlo','Consolas',monospace;font-size:11.5px;overflow-x:auto;margin:10px 0;line-height:1.6;color:#e2e8f0;white-space:pre}
+.ai-cnt h3{font-size:14px;font-weight:600;color:#fff;margin:12px 0 6px}
+.q-card{background:rgba(199,123,58,.08);border:1px solid rgba(199,123,58,.25);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.q-meta{font-size:10px;color:var(--accent2);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.q-text{font-size:12px;color:var(--text);line-height:1.5;white-space:pre-line}
+
+/* ── Upgrade card (inline in chat) ── */
+.upgrade-card{background:linear-gradient(135deg,rgba(199,123,58,0.12),rgba(199,123,58,0.04));border:1px solid rgba(199,123,58,0.3);border-radius:16px;padding:24px 20px;text-align:center;margin:8px 0;max-width:420px}
+.upgrade-card .uc-icon{font-size:32px;margin-bottom:10px}
+.upgrade-card h3{font-size:17px;font-weight:700;color:var(--accent);margin-bottom:6px}
+.upgrade-card .uc-desc{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px}
+.upgrade-card .uc-features{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;text-align:left}
+.upgrade-card .uc-feat{font-size:12px;color:var(--text);display:flex;align-items:center;gap:6px}
+.upgrade-card .uc-feat::before{content:'✓';color:var(--green);font-weight:700;font-size:13px}
+.upgrade-btn{background:linear-gradient(135deg,var(--accent),#e89b4e);border:none;color:#fff;padding:13px 32px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:transform .15s,box-shadow .15s;display:inline-flex;align-items:center;gap:8px}
+.upgrade-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(199,123,58,0.35)}
+.upgrade-btn:active{transform:scale(0.97)}
+.upgrade-btn:disabled{opacity:.5;cursor:not-allowed}
+.uc-price{font-size:20px;font-weight:800}
+.uc-label{font-size:11px;opacity:.8}
+.contact-link{display:inline-block;margin-top:10px;font-size:12px;color:var(--accent);text-decoration:underline;cursor:pointer}
+
+/* Typing dots */
+.typing{display:flex;gap:4px;padding:4px 0;align-items:center}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:pu 1.4s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes pu{0%,60%,100%{opacity:.2}30%{opacity:1}}
+/* Streaming cursor */
+.blink-cursor{display:inline-block;color:var(--accent);font-size:1em;line-height:1;animation:blink-cur .7s step-end infinite;margin-left:1px}
+@keyframes blink-cur{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── Input area ── */
+.input-area{padding:10px 12px 14px;background:var(--bg);flex-shrink:0;padding-bottom:max(14px, env(safe-area-inset-bottom))}
+.input-box{background:var(--input-bg);border:1px solid var(--border);border-radius:14px;padding:10px 12px;display:flex;align-items:flex-end;gap:8px}
+.input-box:focus-within{border-color:rgba(199,123,58,.5)}
+#userInput{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:15px;font-family:inherit;resize:none;max-height:120px;line-height:1.5;padding:2px 0}
+#userInput::placeholder{color:var(--text3);font-size:14px}
+.send-btn{width:36px;height:36px;background:var(--accent);border:none;border-radius:8px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.send-btn:active{background:var(--accent2);transform:scale(0.95)}
+.send-btn:disabled{opacity:.35}
+.hint{text-align:center;font-size:10.5px;color:var(--text3);margin-top:7px}
+
+/* ── Success toast ── */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--green);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:400;transition:transform .4s ease;box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ── Desktop sidebar (768px+) ── */
+@media(min-width:768px){
+  body{flex-direction:row}
+  .topnav{display:none}
+  .subj-bar{display:none}
+  .drawer-overlay,.drawer,.menu-btn{display:none!important}
+  .desktop-sidebar{width:255px;background:var(--sidebar);display:flex!important;flex-direction:column;border-right:1px solid var(--border);flex-shrink:0;overflow-y:auto}
+  .main{flex:1}
+  .desktop-topbar{display:flex!important}
+  .msg-row{padding:16px 20px}
+  .welcome{margin:48px auto 0;padding:0 24px}
+  .welcome h1{font-size:26px}
+  .w-grid{gap:10px}
+  .w-card{padding:14px 16px}
+  .w-ct{font-size:13px}
+  .w-cs{font-size:12px}
+  .input-area{padding:12px 20px 18px}
+  .u-bubble{max-width:75%}
+}
+
+/* Desktop sidebar always hidden on mobile */
+.desktop-sidebar{display:none}
+.desktop-topbar{display:none;padding:10px 20px;border-bottom:1px solid var(--border);align-items:center;justify-content:space-between;flex-shrink:0}
+.model-tag{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px}
+.mdot{width:7px;height:7px;border-radius:50%;background:#22c55e}
+</style>
+</head>
+<body>
+
+<!-- ── Auth Modal ── -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal-card">
+    <div class="m-logo">B</div>
+    <h2>Welcome to Bachlorites</h2>
+    <p class="m-sub">Your AI Commerce Tutor for KSKVU.<br>Enter your mobile number to get started.</p>
+    <div class="m-error" id="authError"></div>
+    <input type="tel" id="phoneInput" placeholder="📱 10-digit mobile number" maxlength="10" pattern="[0-9]*" inputmode="numeric" autocomplete="tel">
+    <input type="text" id="nameInput" placeholder="👤 Your name" autocomplete="name">
+    <button class="auth-btn" id="authBtn" onclick="register()">Start Learning →</button>
+    <p class="modal-note">We use your number to track your study progress</p>
+  </div>
+</div>
+
+<!-- ── Toast ── -->
+<div class="toast" id="toast"></div>
+
+<!-- ── Mobile top nav ── -->
+<div class="topnav">
+  <div class="brand">
+    <div class="brand-logo">B</div>
+    <span class="brand-name">Bachlorites</span>
+  </div>
+  <div class="nav-right">
+    <div class="q-badge" id="queryBadgeMobile" style="display:none">
+      <span class="qb-num" id="qbNumMobile">5</span> left
+    </div>
+    <button class="new-btn" onclick="newChat()">+ New</button>
+    <button class="menu-btn" onclick="openDrawer()">☰</button>
+  </div>
+</div>
+
+<!-- Mobile subject pills bar -->
+<div class="subj-bar">
+  <button class="s-pill active" onclick="setSub(this,'Financial Accounting')">Fin. Accounting</button>
+  <button class="s-pill" onclick="setSub(this,'Cost Accounting')">Cost Accounting</button>
+  <button class="s-pill" onclick="setSub(this,'Business Economics')">Economics</button>
+  <button class="s-pill" onclick="setSub(this,'Business Law')">Business Law</button>
+  <button class="s-pill" onclick="setSub(this,'Statistics')">Statistics</button>
+  <button class="s-pill" onclick="setSub(this,'Auditing')">Auditing</button>
+</div>
+
+<!-- ── Drawer (mobile menu) ── -->
+<div class="drawer-overlay" id="overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="brand">
+      <div class="brand-logo">B</div>
+      <span class="brand-name">Bachlorites</span>
+    </div>
+    <button class="close-btn" onclick="closeDrawer()">×</button>
+  </div>
+  <div class="sec-label">AI Commands</div>
+  <button class="s-item" onclick="sq('Quiz me on Chapter 3 of Financial Accounting')"><span class="dot"></span>🎯 Quiz me — Chapter 3</button>
+  <button class="s-item" onclick="sq('Revision notes for Chapter 2 of Financial Accounting')"><span class="dot"></span>📝 Revision Notes — Ch 2</button>
+  <button class="s-item" onclick="sq('Give me practice sums for Partnership accounts')"><span class="dot"></span>✏️ Practice Problems</button>
+  <button class="s-item" onclick="sq('Explain simply — samajh nahi aaya')"><span class="dot"></span>💡 Explain Simply</button>
+  <div class="sdiv"></div>
+  <div class="sec-label">Quick prompts</div>
+  <button class="s-item" onclick="sq('Question no 4 of chapter 3 of financial accounting of KSKVU university')"><span class="dot"></span>Ch 3 Q4 — Financial Accounting</button>
+  <button class="s-item" onclick="sq('Question no 2 of chapter 5 of financial accounting of KSKVU university')"><span class="dot"></span>Ch 5 Q2 — Partnership accounts</button>
+  <button class="s-item" onclick="sq('Question no 7 of chapter 2 of cost accounting of KSKVU university')"><span class="dot"></span>Ch 2 Q7 — Cost Accounting</button>
+  <div class="sdiv"></div>
+  <div class="sec-label">Exam prep</div>
+  <button class="s-item" onclick="sq('Give me 5 most important questions from financial accounting for KSKVU semester exam')"><span class="dot"></span>Important FA exam questions</button>
+  <button class="s-item" onclick="sq('Short notes on final accounts for KSKVU revision')"><span class="dot"></span>Final accounts revision</button>
+  <div class="sdiv"></div>
+  <div class="sec-label">Subject</div>
+  <div class="pills">
+    <button class="pill active" onclick="setSub(this,'Financial Accounting')">Fin. Accounting</button>
+    <button class="pill" onclick="setSub(this,'Cost Accounting')">Cost Accounting</button>
+    <button class="pill" onclick="setSub(this,'Business Economics')">Economics</button>
+    <button class="pill" onclick="setSub(this,'Business Law')">Business Law</button>
+    <button class="pill" onclick="setSub(this,'Statistics')">Statistics</button>
+    <button class="pill" onclick="setSub(this,'Auditing')">Auditing</button>
+  </div>
+  <div class="drawer-footer">
+    <span id="drawerPlan"></span><br>Bachlorites · KSKVU · AI-Powered Tutor
+  </div>
+</div>
+
+<!-- ── Desktop sidebar ── -->
+<div class="desktop-sidebar">
+  <div style="padding:16px 14px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)">
+    <div class="brand"><div class="brand-logo">B</div><span class="brand-name">Bachlorites</span></div>
+    <button class="new-btn" onclick="newChat()">+ New</button>
+  </div>
+  <div class="sec-label">AI Commands</div>
+  <button class="s-item" onclick="sq('Quiz me on Chapter 3 of Financial Accounting')"><span class="dot"></span>🎯 Quiz me — Chapter 3</button>
+  <button class="s-item" onclick="sq('Revision notes for Chapter 2 of Financial Accounting')"><span class="dot"></span>📝 Revision Notes — Ch 2</button>
+  <button class="s-item" onclick="sq('Give me practice sums for Partnership accounts')"><span class="dot"></span>✏️ Practice Problems</button>
+  <button class="s-item" onclick="sq('Explain simply — samajh nahi aaya')"><span class="dot"></span>💡 Explain Simply</button>
+  <div class="sdiv"></div>
+  <div class="sec-label">Quick prompts</div>
+  <button class="s-item" onclick="sq('Question no 4 of chapter 3 of financial accounting of KSKVU university')"><span class="dot"></span>Ch 3 Q4 — Financial Accounting</button>
+  <button class="s-item" onclick="sq('Question no 5 of chapter 2 of financial accounting of KSKVU university')"><span class="dot"></span>Ch 2 Q5 — Financial Accounting</button>
+  <button class="s-item" onclick="sq('Question no 7 of chapter 2 of cost accounting of KSKVU university')"><span class="dot"></span>Ch 2 Q7 — Cost Accounting</button>
+  <div class="sdiv"></div>
+  <div class="sec-label">Subject</div>
+  <div class="pills">
+    <button class="pill active" onclick="setSub(this,'Financial Accounting')">Fin. Accounting</button>
+    <button class="pill" onclick="setSub(this,'Cost Accounting')">Cost Accounting</button>
+    <button class="pill" onclick="setSub(this,'Business Economics')">Economics</button>
+    <button class="pill" onclick="setSub(this,'Business Law')">Business Law</button>
+    <button class="pill" onclick="setSub(this,'Statistics')">Statistics</button>
+    <button class="pill" onclick="setSub(this,'Auditing')">Auditing</button>
+  </div>
+  <div style="margin-top:auto;padding:12px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);text-align:center">
+    <div id="sidebarPlan"></div>
+    Bachlorites · KSKVU · AI Tutor
+  </div>
+</div>
+
+<!-- ── Main ── -->
+<div class="main">
+  <!-- Desktop topbar -->
+  <div class="desktop-topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:14px;font-weight:500" id="topSub">Financial Accounting</span>
+      <span style="color:var(--text3);font-size:13px">· KSKVU University</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="q-badge" id="queryBadgeDesktop" style="display:none">
+        <span class="qb-num" id="qbNumDesktop">5</span> left
+      </div>
+      <div class="model-tag"><span class="mdot"></span>AI Tutor · Active</div>
+    </div>
+  </div>
+
+  <div class="messages" id="messages">
+    <div class="welcome" id="welcomeEl">
+      <div class="w-logo">B</div>
+      <h1>How can I help you study?</h1>
+      <p>Type naturally — <em>"Question no 4 of chapter 3 of financial accounting"</em><br>or try our <strong>AI commands</strong> below 👇</p>
+      <div class="w-grid">
+        <div class="w-card" onclick="sq('Question no 4 of chapter 3 of financial accounting of KSKVU university')"><div class="w-emoji">📊</div><div class="w-ct">Solve Question</div><div class="w-cs">Ch 3 Q4 — Final Accounts</div></div>
+        <div class="w-card" onclick="sq('Quiz me on Chapter 2 of Financial Accounting')"><div class="w-emoji">🎯</div><div class="w-ct">Quiz Me</div><div class="w-cs">Test your Chapter 2 knowledge</div></div>
+        <div class="w-card" onclick="sq('Revision notes for Chapter 3 of Financial Accounting KSKVU')"><div class="w-emoji">📝</div><div class="w-ct">Revision Notes</div><div class="w-cs">Bullet-point exam summary</div></div>
+        <div class="w-card" onclick="sq('Give me 3 practice sums similar to partnership adjustment problems')"><div class="w-emoji">✏️</div><div class="w-ct">Practice Sums</div><div class="w-cs">Generate new problems</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div class="input-box">
+      <textarea id="userInput" rows="1" placeholder='Try: "quiz me on Ch 3" or "revision notes for final accounts"' oninput="ar(this)" onkeydown="hk(event)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="send()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+    <p class="hint">Bachlorites may make mistakes. Verify with your textbook.</p>
+  </div>
+</div>
+
+<!-- Razorpay SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+// ═══════════════════════════════════════════
+// ── STATE ──
+// ═══════════════════════════════════════════
+let subject = 'Financial Accounting';
+let hist = [];
+let userPhone = localStorage.getItem('bach_phone') || '';
+let userName = localStorage.getItem('bach_name') || '';
+let userPlan = localStorage.getItem('bach_plan') || 'free';
+let remaining = null;
+let config = { sheetsConfigured: false, razorpayConfigured: false, freeLimit: 5, paidLimit: 15, planPrice: 99 };
+
+// Dynamic question database (loaded from Google Sheet)
+let DB = {};
+
+// Fallback questions when Sheets not configured
+const FALLBACK_DB = {
+  'financial accounting': {
+    '3-4': { question: 'Prepare Trading Account and P&L Account from the following Trial Balance:\nParticulars|Dr(Rs)|Cr(Rs)\nCapital|-|200000\nPurchases|150000|-\nSales|-|300000\nSalaries|40000|-\nRent|12000|-\nOpening Stock|50000|-\nDebtors|80000|-\nCreditors|-|60000\nCash|28000|-\nADJUSTMENTS: Closing stock Rs60000. Outstanding salaries Rs5000.', chapter: 'Chapter 3', topic: 'Final Accounts' },
+    '2-5': { question: 'Prepare Trading Account and P&L Account from the following Trial Balance:\nParticulars|Dr(Rs)|Cr(Rs)\nCapital|-|200000\nPurchases|150000|-\nSales|-|300000\nSalaries|40000|-\nRent|12000|-\nOpening Stock|50000|-\nDebtors|80000|-\nCreditors|-|60000\nCash|28000|-\nADJUSTMENTS: Closing stock Rs60000. Outstanding salaries Rs5000.', chapter: 'Chapter 2', topic: 'Trading Account' }
+  }
+};
+
+// ═══════════════════════════════════════════
+// ── INIT ──
+// ═══════════════════════════════════════════
+async function init() {
+  // Fetch server config
+  try {
+    const res = await fetch('/api/config');
+    config = await res.json();
+  } catch (e) { console.warn('Config fetch failed:', e); }
+
+  // Load questions from Sheet
+  loadQuestions();
+
+  // Check if user already registered
+  if (userPhone && userPhone !== 'guest') {
+    document.getElementById('authModal').classList.add('hidden');
+    refreshUser();
+  } else if (!config.sheetsConfigured) {
+    // Sheets not configured — skip auth
+    document.getElementById('authModal').classList.add('hidden');
+    userPhone = 'guest';
+  }
+  // else: show auth modal (default)
+
+  updateBadges();
+}
+
+async function loadQuestions() {
+  try {
+    const res = await fetch('/api/questions');
+    const data = await res.json();
+    if (data.questions && data.questions.length > 0) {
+      DB = {};
+      data.questions.forEach(q => {
+        const subj = (q.subject || '').toLowerCase().trim();
+        if (!subj) return;
+        if (!DB[subj]) DB[subj] = {};
+        const key = `${q.chapter}-${q.sum}`;
+        DB[subj][key] = {
+          question: q['question'] || q['question '] || '',
+          chapter: `Chapter ${q.chapter}`,
+          topic: q['question type'] || '',
+          tutor: q['tutor'] || q['tutor '] || ''
+        };
+      });
+    } else {
+      DB = FALLBACK_DB;
+    }
+  } catch (e) {
+    console.warn('Questions fetch failed, using fallback:', e);
+    DB = FALLBACK_DB;
+  }
+}
+
+async function refreshUser() {
+  if (!config.sheetsConfigured || !userPhone || userPhone === 'guest') return;
+  try {
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: userPhone, name: userName })
+    });
+    const data = await res.json();
+    if (data.user) {
+      userPlan = data.user.plan || 'free';
+      localStorage.setItem('bach_plan', userPlan);
+      const limit = userPlan === 'paid' ? config.paidLimit : config.freeLimit;
+      remaining = limit - (data.user.queries_today || 0);
+      if (remaining < 0) remaining = 0;
+      updateBadges();
+    }
+  } catch (e) { console.warn('Refresh user failed:', e); }
+}
+
+// ═══════════════════════════════════════════
+// ── AUTH ──
+// ═══════════════════════════════════════════
+async function register() {
+  const phone = document.getElementById('phoneInput').value.trim();
+  const name = document.getElementById('nameInput').value.trim();
+  const errEl = document.getElementById('authError');
+  const btn = document.getElementById('authBtn');
+
+  if (!phone || phone.length !== 10 || !/^\d{10}$/.test(phone)) {
+    errEl.textContent = 'Please enter a valid 10-digit mobile number';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Please wait...';
+  errEl.textContent = '';
+
+  try {
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, name: name || 'Student' })
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      errEl.textContent = data.error;
+      btn.disabled = false;
+      btn.textContent = 'Start Learning →';
+      return;
+    }
+
+    // Save to local storage
+    userPhone = phone;
+    userName = name || 'Student';
+    localStorage.setItem('bach_phone', userPhone);
+    localStorage.setItem('bach_name', userName);
+
+    if (data.user) {
+      userPlan = data.user.plan || 'free';
+      localStorage.setItem('bach_plan', userPlan);
+      const limit = userPlan === 'paid' ? config.paidLimit : config.freeLimit;
+      remaining = limit - (data.user.queries_today || 0);
+      if (remaining < 0) remaining = 0;
+    }
+
+    document.getElementById('authModal').classList.add('hidden');
+    updateBadges();
+    showToast(data.message || 'Welcome! 🎉');
+  } catch (e) {
+    errEl.textContent = 'Connection error. Please try again.';
+    btn.disabled = false;
+    btn.textContent = 'Start Learning →';
+  }
+}
+
+// ═══════════════════════════════════════════
+// ── QUERY BADGE ──
+// ═══════════════════════════════════════════
+function updateBadges() {
+  const mBadge = document.getElementById('queryBadgeMobile');
+  const dBadge = document.getElementById('queryBadgeDesktop');
+  const mNum = document.getElementById('qbNumMobile');
+  const dNum = document.getElementById('qbNumDesktop');
+  const drawerPlan = document.getElementById('drawerPlan');
+  const sidebarPlan = document.getElementById('sidebarPlan');
+
+  if (remaining !== null && config.sheetsConfigured) {
+    mBadge.style.display = 'flex';
+    dBadge.style.display = 'flex';
+    mNum.textContent = remaining;
+    dNum.textContent = remaining;
+
+    // Style based on plan and remaining
+    const isPaid = userPlan === 'paid';
+    [mBadge, dBadge].forEach(b => {
+      b.classList.remove('low', 'paid-badge');
+      if (isPaid) b.classList.add('paid-badge');
+      else if (remaining <= 2) b.classList.add('low');
+    });
+
+    const planLabel = isPaid ? '⭐ Paid Plan' : '🆓 Free Plan';
+    if (drawerPlan) drawerPlan.textContent = planLabel;
+    if (sidebarPlan) sidebarPlan.textContent = planLabel;
+  } else {
+    mBadge.style.display = 'none';
+    dBadge.style.display = 'none';
+  }
+}
+
+// ═══════════════════════════════════════════
+// ── QUESTION PARSER ──
+// ═══════════════════════════════════════════
+function parseQ(text) {
+  const t = text.toLowerCase();
+  const m = t.match(/(?:question|q|sum|no\.?|number)[\s#.]*(\d+)[\s\w]*chapter[\s#.]*(\d+)|chapter[\s#.]*(\d+)[\s\w]*(?:question|q|sum|no\.?|number)[\s#.]*(\d+)|ch[\s#.]*(\d+)[\s\w]*(?:q|sum|no\.?|question)[\s#.]*(\d+)/i);
+  if (!m) return null;
+  const ch = m[2] || m[3] || m[5], q = m[1] || m[4] || m[6];
+  if (!ch || !q) return null;
+  const key = `${ch}-${q}`;
+
+  // Search across all subjects in DB
+  for (const [s, qs] of Object.entries(DB)) {
+    if (qs[key]) return { subj: s, key, data: qs[key] };
+  }
+
+  return { key, ch, q, notFound: true };
+}
+
+function sysPrompt() {
+  return `You are Bachlorites, an expert AI commerce tutor for KSKVU (Krantiguru Shyamji Krishna Verma Kachchh University) students in Gujarat, India. Current subject: ${subject}.
+
+YOUR CAPABILITIES:
+1. SOLVE: Solve exam questions completely with step-by-step working
+2. QUIZ: If student says "quiz me on Chapter X", ask questions one by one and mark their answers
+3. SIMPLIFY: If they say "explain simply" or "samajh nahi aaya", explain again in easier language with a local Gujarat example
+4. SUMMARISE: If they say "revision notes for Chapter X", give a clean bullet-point exam summary
+5. PRACTICE: If they say "give me similar sums", create 3 new practice problems like the one asked
+6. FOLLOW-UP: Always respond contextually to follow-up questions
+
+RULES:
+- Format accounts in proper T-format using plain text
+- Use simple language; Hindi/Gujarati words are welcome
+- End each complete answer with "🔑 Key Point to Remember"
+- Follow KSKVU Gujarat University commerce syllabus`;
+}
+
+// ═══════════════════════════════════════════
+// ── UI HELPERS ──
+// ═══════════════════════════════════════════
+function openDrawer() { document.getElementById('drawer').classList.add('open'); document.getElementById('overlay').classList.add('open'); document.body.style.overflow = 'hidden'; }
+function closeDrawer() { document.getElementById('drawer').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); document.body.style.overflow = ''; }
+
+function setSub(el, s) {
+  subject = s;
+  document.querySelectorAll('.pill,.s-pill').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.pill,.s-pill').forEach(p => { if (p.textContent.trim() === el.textContent.trim()) p.classList.add('active'); });
+  const ts = document.getElementById('topSub'); if (ts) ts.textContent = s;
+  closeDrawer();
+}
+
+function newChat() {
+  hist = [];
+  closeDrawer();
+  const m = document.getElementById('messages');
+  m.innerHTML = `<div class="welcome" id="welcomeEl"><div class="w-logo">B</div><h1>How can I help you study?</h1><p>Type naturally — <em>"Question no 4 of chapter 3 of financial accounting"</em><br>or try our <strong>AI commands</strong> below 👇</p><div class="w-grid"><div class="w-card" onclick="sq('Question no 4 of chapter 3 of financial accounting of KSKVU university')"><div class="w-emoji">📊</div><div class="w-ct">Solve Question</div><div class="w-cs">Ch 3 Q4 — Final Accounts</div></div><div class="w-card" onclick="sq('Quiz me on Chapter 2 of Financial Accounting')"><div class="w-emoji">🎯</div><div class="w-ct">Quiz Me</div><div class="w-cs">Test your Chapter 2 knowledge</div></div><div class="w-card" onclick="sq('Revision notes for Chapter 3 of Financial Accounting KSKVU')"><div class="w-emoji">📝</div><div class="w-ct">Revision Notes</div><div class="w-cs">Bullet-point exam summary</div></div><div class="w-card" onclick="sq('Give me 3 practice sums similar to partnership adjustment problems')"><div class="w-emoji">✏️</div><div class="w-ct">Practice Sums</div><div class="w-cs">Generate new problems</div></div></div></div>`;
+}
+
+function sq(t) { closeDrawer(); document.getElementById('userInput').value = t; send(); }
+function ar(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
+function hk(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
+function hideW() { const w = document.getElementById('welcomeEl'); if (w) w.remove(); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function addUser(text) {
+  hideW();
+  const m = document.getElementById('messages');
+  const d = document.createElement('div');
+  d.className = 'msg-row user';
+  d.innerHTML = `<div class="u-bubble">${text.replace(/\n/g, '<br>')}</div>`;
+  m.appendChild(d);
+  m.scrollTop = m.scrollHeight;
+}
+
+function addTyping() {
+  hideW();
+  const m = document.getElementById('messages');
+  const d = document.createElement('div');
+  d.className = 'msg-row assistant';
+  d.id = 'typingRow';
+  d.innerHTML = '<div class="ai-av">B</div><div class="ai-cnt"><div class="typing"><span></span><span></span><span></span></div></div>';
+  m.appendChild(d);
+  m.scrollTop = m.scrollHeight;
+}
+
+function rmTyping() { const t = document.getElementById('typingRow'); if (t) t.remove(); }
+
+function fmt(text) {
+  text = text.replace(/```([\s\S]*?)```/g, '<pre>$1</pre>');
+  text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+  return text.split(/\n\n+/).map(p => {
+    if (p.startsWith('<pre>') || p.startsWith('<h3>')) return p;
+    return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+  }).join('');
+}
+
+async function addAI(text, qd) {
+  const m = document.getElementById('messages');
+  const d = document.createElement('div');
+  d.className = 'msg-row assistant';
+  let qc = '';
+  if (qd) qc = `<div class="q-card"><div class="q-meta">${qd.chapter} · ${qd.topic}</div><div class="q-text">${qd.question}</div></div>`;
+
+  // Create container with empty content area
+  const contentId = 'ai-stream-' + Date.now();
+  d.innerHTML = `<div class="ai-av">B</div><div class="ai-cnt">${qc}<span id="${contentId}" class="stream-cursor"></span></div>`;
+  m.appendChild(d);
+  m.scrollTop = m.scrollHeight;
+
+  // Stream the text character by character
+  const el = document.getElementById(contentId);
+  let displayed = '';
+
+  for (let i = 0; i < text.length; i++) {
+    displayed += text[i];
+    // Render formatted version so far
+    el.innerHTML = fmt(displayed) + '<span class="blink-cursor">▋</span>';
+    // Scroll as content grows
+    m.scrollTop = m.scrollHeight;
+    // Speed: punctuation pauses, normal chars fast
+    const ch = text[i];
+    let delay = 12;
+    if (ch === '\n') delay = 60;
+    else if ('.!?'.includes(ch)) delay = 180;
+    else if (',;:'.includes(ch)) delay = 80;
+    await new Promise(r => setTimeout(r, delay));
+  }
+
+  // Final render — remove cursor
+  el.innerHTML = fmt(text);
+  el.classList.remove('stream-cursor');
+  m.scrollTop = m.scrollHeight;
+}
+
+function addErr(msg) {
+  const m = document.getElementById('messages');
+  const d = document.createElement('div');
+  d.className = 'msg-row assistant';
+  d.innerHTML = `<div class="ai-av" style="background:#7f1d1d">B</div><div class="ai-cnt"><p style="color:#f87171">${msg}</p></div>`;
+  m.appendChild(d);
+  m.scrollTop = m.scrollHeight;
+}
+
+// ═══════════════════════════════════════════
+// ── UPGRADE / PAYMENT ──
+// ═══════════════════════════════════════════
+function showUpgradeCard() {
+  const m = document.getElementById('messages');
+  const d = document.createElement('div');
+  d.className = 'msg-row assistant';
+
+  const priceDisplay = config.planPrice || 99;
+  const paidLimit = config.paidLimit || 15;
+  const hasRazorpay = config.razorpayConfigured;
+
+  d.innerHTML = `<div class="ai-av" style="background:linear-gradient(135deg,var(--accent),#e89b4e)">B</div>
+  <div class="ai-cnt">
+    <div class="upgrade-card">
+      <div class="uc-icon">⚡</div>
+      <h3>Daily Limit Reached!</h3>
+      <p class="uc-desc">You've used all your free queries for today. Upgrade to Paid for more!</p>
+      <div class="uc-features">
+        <div class="uc-feat">${paidLimit} queries per day</div>
+        <div class="uc-feat">All subjects included</div>
+        <div class="uc-feat">Quiz, revision notes, practice sums</div>
+        <div class="uc-feat">Priority support</div>
+      </div>
+      ${hasRazorpay
+        ? `<button class="upgrade-btn" onclick="initiatePayment()">Upgrade — <span class="uc-price">₹${priceDisplay}</span></button><br><span class="uc-label">One-time payment · UPI / Card / Netbanking</span>`
+        : `<p style="font-size:13px;color:var(--text2);margin-top:8px">Contact us to upgrade your plan</p>`
+      }
+    </div>
+  </div>`;
+  m.appendChild(d);
+  m.scrollTop = m.scrollHeight;
+}
+
+async function initiatePayment() {
+  try {
+    const res = await fetch('/api/create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: userPhone })
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      addErr('Payment error: ' + (data.message || data.error));
+      return;
+    }
+
+    // Open Razorpay checkout
+    const options = {
+      key: data.keyId,
+      amount: data.amount,
+      currency: data.currency,
+      name: 'Bachlorites',
+      description: 'Paid Plan — ' + config.paidLimit + ' queries/day',
+      order_id: data.orderId,
+      prefill: {
+        contact: userPhone,
+        name: userName
+      },
+      theme: { color: '#c77b3a' },
+      handler: async function (response) {
+        // Verify payment on server
+        try {
+          const vRes = await fetch('/api/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              phone: userPhone
+            })
+          });
+          const vData = await vRes.json();
+
+          if (vData.success) {
+            userPlan = 'paid';
+            localStorage.setItem('bach_plan', 'paid');
+            remaining = config.paidLimit;
+            updateBadges();
+            showToast('🎉 Upgraded to Paid! ' + config.paidLimit + ' queries/day');
+            await addAI('🎉 **Payment Successful!** You are now on the **Paid Plan** with ' + config.paidLimit + ' queries per day. Happy studying!', null);
+          } else {
+            addErr('Payment verification failed: ' + (vData.error || 'Unknown error'));
+          }
+        } catch (e) {
+          addErr('Payment verification error. Contact support.');
+        }
+      },
+      modal: {
+        ondismiss: function () {
+          addErr('Payment cancelled. You can try again anytime.');
+        }
+      }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+  } catch (e) {
+    addErr('Payment error: ' + e.message);
+  }
+}
+
+// ═══════════════════════════════════════════
+// ── SEND MESSAGE ──
+// ═══════════════════════════════════════════
+async function send() {
+  const inp = document.getElementById('userInput');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  inp.style.height = 'auto';
+  document.getElementById('sendBtn').disabled = true;
+
+  addUser(text);
+
+  // Parse for known questions in DB
+  const p = parseQ(text);
+  let qd = null, prompt = text;
+
+  if (p && !p.notFound) {
+    qd = p.data;
+    prompt = `Solve this KSKVU exam question completely with full step-by-step working:\n\n${qd.question}\n\n[${qd.chapter} — ${qd.topic}, Subject: ${subject}]`;
+  } else if (p && p.notFound) {
+    prompt = `A KSKVU student asks for Question ${p.q} of Chapter ${p.ch} from ${subject}. Create a realistic KSKVU-pattern question and solve it completely with full working.`;
+  }
+
+  hist.push({ role: 'user', content: prompt });
+  addTyping();
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: hist,
+        system: sysPrompt(),
+        phone: userPhone,
+        subject: subject
+      })
+    });
+
+    const data = await res.json();
+    rmTyping();
+
+    // Handle limit errors
+    if (data.error === 'FREE_LIMIT') {
+      hist.pop();
+      showUpgradeCard();
+    } else if (data.error === 'PAID_LIMIT') {
+      hist.pop();
+      addErr(data.message || 'Daily limit reached. Try again tomorrow!');
+    } else if (data.error === 'USER_NOT_FOUND') {
+      hist.pop();
+      addErr('Please register first. Refresh the page to sign up.');
+    } else if (!res.ok || data.error) {
+      addErr(`Error: ${data.error || data.message || 'Unknown error'}`);
+      hist.pop();
+    } else {
+      hist.push({ role: 'assistant', content: data.reply });
+      await addAI(data.reply, qd);
+
+      // Update remaining counter
+      if (data.remaining !== undefined) {
+        remaining = data.remaining;
+        userPlan = data.plan || userPlan;
+        updateBadges();
+      }
+    }
+  } catch (e) {
+    rmTyping();
+    addErr('Connection error. Please try again.');
+    hist.pop();
+  }
+
+  document.getElementById('sendBtn').disabled = false;
+  inp.focus();
+}
+
+// ═══════════════════════════════════════════
+// ── BOOT ──
+// ═══════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
